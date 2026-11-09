@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReciLink - Conectando el Reciclaje</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+    <div id="app-container">
+
+        <!-- PANTALLA 1: LOGIN Y SELECCIÓN DE ROL -->
+        <div id="pantalla-login" class="pantalla activa">
+            <div class="tarjeta-login">
+                <div class="icono-reciclaje">🔗♻️</div>
+                <h1>ReciLink</h1>
+                <p>Conectando comunidades y el medio ambiente</p>
+                
+                <div class="input-group">
+                    <span>👤</span>
+                    <input type="text" id="usuario" placeholder="Ingresa tu nombre">
+                </div>
+                
+                <div class="input-group">
+                    <span>👥</span>
+                    <select id="rol-usuario">
+                        <option value="Ciudadano">Ciudadano (Recicla y gana)</option>
+                        <option value="Reciclador">Reciclador (Logística)</option>
+                        <option value="Empresa">Empresa (Métricas)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <span>🔒</span>
+                    <input type="password" id="password" placeholder="Contraseña (123)">
+                </div>
+                
+                <button onclick="iniciarSesion()">Ingresar a ReciLink</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA 2: DASHBOARD -->
+        <div id="pantalla-dashboard" class="pantalla">
+            <header>
+                <h2>Hola, <span id="nombre-usuario">Invitado</span> <span id="rol-badge" class="badge">Rol</span> 👋</h2>
+                <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+            </header>
+
+            <main>
+                <!-- Tarjeta de Puntos (Estudiante/Ciudadano) -->
+                <div class="tarjeta-puntos" id="tarjeta-puntos-ciudadano">
+                    <div class="hojas-decorativas">🌿</div>
+                    <h3>Tus EcoPuntos</h3>
+                    <h1 id="puntos-totales">0</h1>
+                    <p>Puntos acumulados</p>
+                </div>
+
+                <!-- NUEVO: Panel de Impacto Global -->
+                <div class="tarjeta-impacto" id="panel-impacto" style="display: none;">
+                    <h3>🌍 Impacto en la Comunidad</h3>
+                    <div class="stats-impacto">
+                        <div class="stat"><h4 id="impacto-kg">0</h4><span>Kg Reciclados</span></div>
+                        <div class="stat"><h4 id="impacto-co2">0</h4><span>Kg CO2 Evitados</span></div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <button class="btn-principal" id="btn-escanear" onclick="irAEscanner()">
+                    📷 Escanear Residuo
+                </button>
+                <!-- NUEVO: Botón de Guía Educativa -->
+                <button class="btn-secundario" id="btn-guia" onclick="abrirGuia()">
+                    📚 Guía: ¿Cómo reciclar?
+                </button>
+                <button class="btn-secundario" id="btn-canje" onclick="abrirModalCanje()">
+                    🎁 Canjear Puntos
+                </button>
+                
+                <button class="btn-secundario" id="btn-admin" onclick="irAAdmin()" style="border-color: var(--naranja-acento); color: var(--naranja-acento);">
+                    🚚 Panel de Logística
+                </button>
+
+                <!-- NUEVO: Misión Verde -->
+                <div class="tarjeta-mision" id="tarjeta-mision" style="display: none;">
+                    <h3>🎯 Reto de la Semana</h3>
+                    <p>Recicla 5 residuos para ganar una recompensa extra.</p>
+                    <div class="barra-fondo">
+                        <div id="barra-mision" class="barra-progreso" style="width: 0%; background-color: var(--naranja-acento);"></div>
+                    </div>
+                    <span id="texto-mision" style="font-size: 0.8rem; color: var(--gris-texto);">0 / 5 completados</span>
+                </div>
+
+                <div class="tarjeta-zona" id="zona-container">
+                    <h3>📍 ¿Dónde estás reciclando?</h3>
+                    <select id="zona-selector">
+                        <option value="Parque Central">Parque Central</option>
+                        <option value="Barrio San Antonio">Barrio San Antonio</option>
+                        <option value="Conjunto Residencial">Conjunto Residencial</option>
+                        <option value="Zona Comercial">Zona Comercial</option>
+                        <option value="Mi Casa">Mi Casa</option>
+                    </select>
+                </div>
+
+                <div class="tarjeta-historial">
+                    <h3>📜 Historial de Actividad</h3>
+                    <ul id="lista-historial">
+                        <li>Aún no has reciclado nada. ¡Anímate!</li>
+                    </ul>
+                </div>
+            </main>
+        </div>
+
+        <!-- PANTALLA 3: ESCÁNER (Se mantiene igual) -->
+        <div id="pantalla-escaner" class="pantalla">
+            <header>
+                <button class="btn-volver" onclick="volverAlDashboard()">⬅ Volver</button>
+                <h2>Escanear Residuo</h2>
+            </header>
+            <main>
+                <p class="instruccion">Apunta la cámara al código de barras o QR del producto.</p>
+                <div class="contenedor-camara">
+                    <div id="lector-qr"></div>
+                    <div class="marco-escaner"></div>
+                </div>
+                <div id="resultado-escaneo" class="resultado oculto">
+                    <div class="icono-resultado">✅</div>
+                    <h3 id="nombre-producto"></h3>
+                    <p id="instruccion-contenedor"></p>
+                    <button class="btn-principal" onclick="confirmarDeposito()">Confirmar Depósito</button>
+                </div>
+            </main>
+        </div>
+
+        <!-- PANTALLA 4: PANEL DE LOGÍSTICA -->
+        <div id="pantalla-admin" class="pantalla">
+            <header>
+                <button class="btn-volver" onclick="mostrarPantalla('pantalla-dashboard')">⬅ Volver</button>
+                <h2>Panel Logística</h2>
+            </header>
+            <main>
+                <p class="instruccion">Monitoreo de contenedores en tiempo real.</p>
+                <div class="lista-contenedores">
+                    <div class="tarjeta-contenedor">
+                        <div class="info-contenedor"><span>♻️ Plástico (Bloque B)</span><span id="porcentaje-plastico">20%</span></div>
+                        <div class="barra-fondo"><div id="barra-plastico" class="barra-progreso" style="width: 20%; background-color: var(--verde-principal);"></div></div>
+                        <div class="acciones-contenedor">
+                            <button class="btn-simular" onclick="simularLlenado('plastico')">Simular Sensor (+)</button>
+                            <button class="btn-vaciar" onclick="vaciarContenedor('plastico')">Vaciar</button>
+                        </div>
+                    </div>
+                    <div class="tarjeta-contenedor">
+                        <div class="info-contenedor"><span>📄 Papel (Biblioteca)</span><span id="porcentaje-papel">45%</span></div>
+                        <div class="barra-fondo"><div id="barra-papel" class="barra-progreso" style="width: 45%; background-color: var(--verde-principal);"></div></div>
+                        <div class="acciones-contenedor">
+                            <button class="btn-simular" onclick="simularLlenado('papel')">Simular Sensor (+)</button>
+                            <button class="btn-vaciar" onclick="vaciarContenedor('papel')">Vaciar</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="tarjeta-config" style="margin-top: 20px;">
+                    <h3>⚙️ Generador de QRs (Admin)</h3>
+                    <input type="text" id="admin-id" placeholder="ID del residuo (ej. botella_1)">
+                    <select id="admin-tipo">
+                        <option value="plastico">Plástico (Blanca)</option>
+                        <option value="papel">Papel (Azul)</option>
+                        <option value="carton">Cartón (Gris)</option>
+                        <option value="vidrio">Vidrio (Verde)</option>
+                    </select>
+                    <input type="number" id="admin-puntos" placeholder="Puntos (ej. 10)">
+                    <button onclick="generarQRAdmin()" style="background-color: var(--naranja-acento);">Generar Código QR</button>
+                    <div id="qr-container" style="margin-top: 15px; display: flex; justify-content: center;"></div>
+                </div>
+                <button onclick="resetearSistema()" style="background-color: #C1121F; margin-top: 20px;">🗑️ Borrar Datos (Reset)</button>
+            </main>
+        </div>
+        
+        <!-- MODAL: CANJE -->
+        <div id="modal-canje" class="modal oculto">
+            <div class="modal-contenido">
+                <h2>☕ Recompensas</h2>
+                <div class="opciones-canje">
+                    <div class="opcion"><span>Café Americano</span><button onclick="canjearPuntos(20, 'Café')">20 pts</button></div>
+                    <div class="opcion"><span>Galletas</span><button onclick="canjearPuntos(30, 'Galletas')">30 pts</button></div>
+                    <div class="opcion"><span>Almuerzo</span><button onclick="canjearPuntos(100, 'Almuerzo')">100 pts</button></div>
+                </div>
+                <button class="btn-salir" onclick="cerrarModalCanje()" style="margin-top: 15px; width: 100%;">Cerrar</button>
+            </div>
+        </div>
+
+        <!-- NUEVO MODAL: GUÍA EDUCATIVA -->
+        <div id="modal-guia" class="modal oculto">
+            <div class="modal-contenido">
+                <h2>📚 Guía de Reciclaje</h2>
+                <p>Aprende a clasificar tus residuos correctamente.</p>
+                
+                <div class="guia-lista">
+                    <div class="guia-item">
+                        <div class="circulo-blanco"></div>
+                        <div>
+                            <strong>Caneca Blanca</strong>
+                            <span>Plásticos, latas y envases.</span>
+                        </div>
+                    </div>
+                    <div class="guia-item">
+                        <div class="circulo-azul"></div>
+                        <div>
+                            <strong>Caneca Azul</strong>
+                            <span>Papel y cartón limpio y seco.</span>
+                        </div>
+                    </div>
+                    <div class="guia-item">
+                        <div class="circulo-verde"></div>
+                        <div>
+                            <strong>Caneca Verde</strong>
+                            <span>Vidrio (botellas, frascos).</span>
+                        </div>
+                    </div>
+                    <div class="guia-item">
+                        <div class="circulo-gris"></div>
+                        <div>
+                            <strong>Caneca Gris</strong>
+                            <span>Residuos no aprovechables (orgánicos, sucios).</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn-principal" onclick="cerrarGuia()" style="margin-top: 20px;">¡Entendido!</button>
+            </div>
+        </div>
+
+        <div id="toast" class="toast oculto">¡Mensaje aquí!</div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/escaner.js"></script>
+</body>
+</html>
